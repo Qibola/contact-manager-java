@@ -1,0 +1,11 @@
+# Compiled output
+out/
+*.class
+
+# Local data file written by the app
+contacts.csv
+
+# OS / editor
+.DS_Store
+.idea/
+*.iml

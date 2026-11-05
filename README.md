@@ -11,9 +11,13 @@ email) are stored in a plain CSV file so you can open them in any spreadsheet.
 
 ```bash
 javac -d out src/contacts/*.java
-java -cp out contacts.Main            # reads ./contacts.csv
+java -cp out contacts.Main            # opens a window on ./contacts.csv
 java -cp out contacts.Main other.csv  # or a file of your choice
 ```
+
+The main window shows your contacts in a table (Name / Phone / Email) with a
+count in the status line. With no display (`-Djava.awt.headless=true`) it
+prints the contacts to the terminal instead.
 
 ## Tests
 
@@ -22,6 +26,7 @@ The tests are plain Java with no external dependencies:
 ```bash
 javac -d out src/contacts/*.java test/contacts/*.java
 java -cp out contacts.ContactStoreTest
+java -cp out contacts.ContactTableModelTest
 ```
 
 ## Project layout
@@ -29,8 +34,11 @@ java -cp out contacts.ContactStoreTest
 ```
 src/contacts/Contact.java       # the Contact model (name, phone, email)
 src/contacts/ContactStore.java  # CSV load/save with proper quoting
-src/contacts/Main.java          # entry point
+src/contacts/ContactTableModel.java   # adapts the contact list to a JTable
+src/contacts/ContactManagerFrame.java # main window: JFrame + JTable + status line
+src/contacts/Main.java          # entry point (opens the window on the Swing EDT)
 test/contacts/ContactStoreTest.java
+test/contacts/ContactTableModelTest.java
 ```
 
 ## CSV format
@@ -46,7 +54,7 @@ Fields with commas, quotes or newlines are quoted; quotes inside a field are dou
 ## Roadmap
 
 - [x] Scaffold: README + Contact class + CSV load/save (with tests)
-- [ ] Main window: JFrame + JTable showing the loaded contacts
+- [x] Main window: JFrame + JTable showing the loaded contacts
 - [ ] Add/edit dialog wired to the table, saving back to CSV
 - [ ] Delete contacts + search/filter box
 - [ ] Column sorting + input validation (email/phone) + menus and polish

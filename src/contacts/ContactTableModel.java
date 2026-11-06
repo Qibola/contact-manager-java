@@ -6,8 +6,8 @@ import javax.swing.table.AbstractTableModel;
 
 /**
  * Adapts a list of contacts to a JTable: one row per contact, with
- * Name / Phone / Email columns. The table is read-only for now; editing
- * goes through a dialog in a later roadmap step.
+ * Name / Phone / Email columns. Cells are not edited in place; changes go
+ * through ContactDialog and then addContact / updateContact.
  */
 public class ContactTableModel extends AbstractTableModel {
     static final String[] COLUMNS = {"Name", "Phone", "Email"};
@@ -32,6 +32,20 @@ public class ContactTableModel extends AbstractTableModel {
 
     public Contact getContactAt(int row) {
         return contacts.get(row);
+    }
+
+    /** Appends a contact and returns its row index. */
+    public int addContact(Contact contact) {
+        contacts.add(contact);
+        int row = contacts.size() - 1;
+        fireTableRowsInserted(row, row);
+        return row;
+    }
+
+    /** Replaces the contact at the given row. */
+    public void updateContact(int row, Contact contact) {
+        contacts.set(row, contact);
+        fireTableRowsUpdated(row, row);
     }
 
     @Override

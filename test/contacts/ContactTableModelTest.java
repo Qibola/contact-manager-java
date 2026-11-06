@@ -14,6 +14,8 @@ public class ContactTableModelTest {
         exposesColumnsAndRows();
         setContactsReplacesRowsAndNotifies();
         getContactsReturnsACopy();
+        addContactAppendsAndNotifies();
+        updateContactReplacesRow();
 
         if (failures > 0) {
             System.out.println(failures + " test(s) FAILED");
@@ -50,6 +52,24 @@ public class ContactTableModelTest {
         ContactTableModel m = new ContactTableModel(List.of(new Contact("A", "1", "a@x")));
         m.getContacts().clear();
         check("copy does not affect model", m.getRowCount() == 1);
+    }
+
+    static void addContactAppendsAndNotifies() {
+        ContactTableModel m = new ContactTableModel(List.of(new Contact("A", "1", "a@x")));
+        int[] inserted = {-1};
+        m.addTableModelListener(e -> inserted[0] = e.getFirstRow());
+        int row = m.addContact(new Contact("B", "2", "b@x"));
+        check("add returns new row index", row == 1 && m.getRowCount() == 2);
+        check("added contact is last", m.getContactAt(1).getName().equals("B"));
+        check("listener told which row", inserted[0] == 1);
+    }
+
+    static void updateContactReplacesRow() {
+        ContactTableModel m = new ContactTableModel(List.of(
+                new Contact("A", "1", "a@x"), new Contact("B", "2", "b@x")));
+        m.updateContact(0, new Contact("A2", "9", "a2@x"));
+        check("row replaced", m.getValueAt(0, 0).equals("A2") && m.getValueAt(0, 1).equals("9"));
+        check("other rows untouched", m.getContactAt(1).getName().equals("B") && m.getRowCount() == 2);
     }
 
     static void check(String name, boolean ok) {

@@ -16,6 +16,8 @@ public class ContactTableModelTest {
         getContactsReturnsACopy();
         addContactAppendsAndNotifies();
         updateContactReplacesRow();
+        removeContactDeletesRowAndNotifies();
+        matchesSearchesAllFieldsIgnoringCase();
 
         if (failures > 0) {
             System.out.println(failures + " test(s) FAILED");
@@ -70,6 +72,29 @@ public class ContactTableModelTest {
         m.updateContact(0, new Contact("A2", "9", "a2@x"));
         check("row replaced", m.getValueAt(0, 0).equals("A2") && m.getValueAt(0, 1).equals("9"));
         check("other rows untouched", m.getContactAt(1).getName().equals("B") && m.getRowCount() == 2);
+    }
+
+    static void removeContactDeletesRowAndNotifies() {
+        ContactTableModel m = new ContactTableModel(List.of(
+                new Contact("A", "1", "a@x"), new Contact("B", "2", "b@x"), new Contact("C", "3", "c@x")));
+        int[] deleted = {-1};
+        m.addTableModelListener(e -> deleted[0] = e.getFirstRow());
+        Contact removed = m.removeContact(1);
+        check("remove returns the contact", removed.getName().equals("B"));
+        check("row removed, order kept", m.getRowCount() == 2
+                && m.getContactAt(0).getName().equals("A") && m.getContactAt(1).getName().equals("C"));
+        check("listener told which row was deleted", deleted[0] == 1);
+    }
+
+    static void matchesSearchesAllFieldsIgnoringCase() {
+        Contact ada = new Contact("Ada Lovelace", "555-0100", "ada@example.com");
+        check("blank query matches", ContactTableModel.matches(ada, "  ")
+                && ContactTableModel.matches(ada, null));
+        check("name match ignores case", ContactTableModel.matches(ada, "LOVE"));
+        check("phone match", ContactTableModel.matches(ada, "0100"));
+        check("email match, query trimmed", ContactTableModel.matches(ada, " example.com "));
+        check("no match", !ContactTableModel.matches(ada, "turing"));
+        check("empty fields are fine", !ContactTableModel.matches(new Contact("Grace", "", ""), "555"));
     }
 
     static void check(String name, boolean ok) {

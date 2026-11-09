@@ -17,8 +17,10 @@ java -cp out contacts.Main other.csv  # or a file of your choice
 
 The main window shows your contacts in a table (Name / Phone / Email) with a
 count in the status line. Use **Add...** to create a contact, and **Edit...**
-(or double-click a row) to change one. Every change is saved straight back to
-the CSV file. With no display (`-Djava.awt.headless=true`) it
+(or double-click a row) to change one, and **Delete** (after a confirmation) to
+remove one. Type in the **Search** box to filter the table by name, phone or
+email (case-insensitive); the status line then shows "Showing N of M contacts".
+Every change is saved straight back to the CSV file. With no display (`-Djava.awt.headless=true`) it
 prints the contacts to the terminal instead.
 
 ## Tests
@@ -37,8 +39,8 @@ java -Djava.awt.headless=true -cp out contacts.ContactDialogTest
 ```
 src/contacts/Contact.java       # the Contact model (name, phone, email)
 src/contacts/ContactStore.java  # CSV load/save with proper quoting
-src/contacts/ContactTableModel.java   # adapts the contact list to a JTable
-src/contacts/ContactManagerFrame.java # main window: toolbar + JTable + status line
+src/contacts/ContactTableModel.java   # adapts the contact list to a JTable + search matching
+src/contacts/ContactManagerFrame.java # main window: toolbar + search + JTable + status line
 src/contacts/ContactDialog.java       # modal add/edit dialog
 src/contacts/Main.java          # entry point (opens the window on the Swing EDT)
 test/contacts/ContactStoreTest.java
@@ -61,5 +63,5 @@ Fields with commas, quotes or newlines are quoted; quotes inside a field are dou
 - [x] Scaffold: README + Contact class + CSV load/save (with tests)
 - [x] Main window: JFrame + JTable showing the loaded contacts
 - [x] Add/edit dialog wired to the table, saving back to CSV
-- [ ] Delete contacts + search/filter box
+- [x] Delete contacts + search/filter box
 - [ ] Column sorting + input validation (email/phone) + menus and polish

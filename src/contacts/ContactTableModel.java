@@ -2,12 +2,13 @@ package contacts;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import javax.swing.table.AbstractTableModel;
 
 /**
  * Adapts a list of contacts to a JTable: one row per contact, with
  * Name / Phone / Email columns. Cells are not edited in place; changes go
- * through ContactDialog and then addContact / updateContact.
+ * through ContactDialog and then addContact / updateContact / removeContact.
  */
 public class ContactTableModel extends AbstractTableModel {
     static final String[] COLUMNS = {"Name", "Phone", "Email"};
@@ -46,6 +47,26 @@ public class ContactTableModel extends AbstractTableModel {
     public void updateContact(int row, Contact contact) {
         contacts.set(row, contact);
         fireTableRowsUpdated(row, row);
+    }
+
+    /** Removes and returns the contact at the given row. */
+    public Contact removeContact(int row) {
+        Contact removed = contacts.remove(row);
+        fireTableRowsDeleted(row, row);
+        return removed;
+    }
+
+    /**
+     * True if the contact's name, phone or email contains the query,
+     * ignoring case and surrounding spaces. A blank query matches everyone.
+     */
+    public static boolean matches(Contact c, String query) {
+        String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        if (q.isEmpty()) return true;
+        for (String field : new String[] {c.getName(), c.getPhone(), c.getEmail()}) {
+            if (field != null && field.toLowerCase(Locale.ROOT).contains(q)) return true;
+        }
+        return false;
     }
 
     @Override

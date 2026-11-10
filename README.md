@@ -20,6 +20,16 @@ count in the status line. Use **Add...** to create a contact, and **Edit...**
 (or double-click a row) to change one, and **Delete** (after a confirmation) to
 remove one. Type in the **Search** box to filter the table by name, phone or
 email (case-insensitive); the status line then shows "Showing N of M contacts".
+The list starts sorted by name; click any column header to sort by it, and
+click again to reverse (sorting ignores case and never changes the CSV order).
+Phone and email are optional, but when filled in the dialog checks them: a
+phone needs at least 7 digits and only `+ - . ( )` or spaces, and an email must
+look like `name@example.com`.
+
+Menus: **File** has Find (Cmd/Ctrl+F jumps to the search box) and Quit
+(Cmd/Ctrl+Q); **Contact** has Add (Cmd/Ctrl+N), Edit (Cmd/Ctrl+E) and Delete
+(Cmd/Ctrl+Backspace), the same actions as the toolbar buttons.
+
 Every change is saved straight back to the CSV file. With no display (`-Djava.awt.headless=true`) it
 prints the contacts to the terminal instead.
 
@@ -40,8 +50,8 @@ java -Djava.awt.headless=true -cp out contacts.ContactDialogTest
 src/contacts/Contact.java       # the Contact model (name, phone, email)
 src/contacts/ContactStore.java  # CSV load/save with proper quoting
 src/contacts/ContactTableModel.java   # adapts the contact list to a JTable + search matching
-src/contacts/ContactManagerFrame.java # main window: toolbar + search + JTable + status line
-src/contacts/ContactDialog.java       # modal add/edit dialog
+src/contacts/ContactManagerFrame.java # main window: menus + toolbar + search + sortable JTable + status line
+src/contacts/ContactDialog.java       # modal add/edit dialog + phone/email validation
 src/contacts/Main.java          # entry point (opens the window on the Swing EDT)
 test/contacts/ContactStoreTest.java
 test/contacts/ContactTableModelTest.java
@@ -64,4 +74,4 @@ Fields with commas, quotes or newlines are quoted; quotes inside a field are dou
 - [x] Main window: JFrame + JTable showing the loaded contacts
 - [x] Add/edit dialog wired to the table, saving back to CSV
 - [x] Delete contacts + search/filter box
-- [ ] Column sorting + input validation (email/phone) + menus and polish
+- [x] Column sorting + input validation (email/phone) + menus and polish

@@ -18,12 +18,28 @@ public class ContactTableModelTest {
         updateContactReplacesRow();
         removeContactDeletesRowAndNotifies();
         matchesSearchesAllFieldsIgnoringCase();
+        sorterOrdersByNameIgnoringCase();
 
         if (failures > 0) {
             System.out.println(failures + " test(s) FAILED");
             System.exit(1);
         }
         System.out.println("All tests passed");
+    }
+
+    static void sorterOrdersByNameIgnoringCase() {
+        ContactTableModel m = new ContactTableModel(List.of(
+                new Contact("charlie", "555-0103", "c@example.com"),
+                new Contact("Alan Turing", "555-0101", "alan@example.com"),
+                new Contact("bob", "555-0102", "bob@example.com")));
+        javax.swing.table.TableRowSorter<ContactTableModel> s = ContactManagerFrame.createSorter(m);
+        check("sorted by name, case-insensitive",
+                s.convertRowIndexToModel(0) == 1
+                && s.convertRowIndexToModel(1) == 2
+                && s.convertRowIndexToModel(2) == 0);
+        s.toggleSortOrder(0); // header click: now descending
+        check("toggle reverses the order", s.convertRowIndexToModel(0) == 0);
+        check("model keeps file order", m.getContactAt(0).getName().equals("charlie"));
     }
 
     static void exposesColumnsAndRows() {

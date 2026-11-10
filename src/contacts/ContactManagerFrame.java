@@ -1,39 +1,52 @@
 package contacts;
 
 import java.awt.BorderLayout;
+import java.awt.GraphicsEnvironment;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
+import javax.swing.RowSorter;
+import javax.swing.SortOrder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.TableRowSorter;
 
 /**
- * The main window: a toolbar (Add / Edit / Delete + a search box), a table of
- * contacts and a status line. Every change is saved straight back to the CSV
- * file. The search box filters the view only; the model always holds every
- * contact, so view row indices are converted before touching the model.
+ * The main window: a menu bar, a toolbar (Add / Edit / Delete + a search box),
+ * a sortable table of contacts and a status line. Every change is saved
+ * straight back to the CSV file. Sorting and searching change the view only;
+ * the model always holds every contact in file order, so view row indices are
+ * converted before touching the model.
  */
 public class ContactManagerFrame extends JFrame {
     private final ContactStore store;
     private final ContactTableModel model;
     private final JTable table;
     private final JLabel status = new JLabel();
-    private final JButton editButton = new JButton("Edit...");
-    private final JButton deleteButton = new JButton("Delete");
+    private final Action addAction = action("Add...", KeyEvent.VK_N, this::addContact);
+    private final Action editAction = action("Edit...", KeyEvent.VK_E, this::editSelected);
+    private final Action deleteAction = action("Delete", KeyEvent.VK_BACK_SPACE, this::deleteSelected);
     private final JTextField searchField = new JTextField(16);
     private final TableRowSorter<ContactTableModel> sorter;
 
@@ -48,9 +61,8 @@ public class ContactManagerFrame extends JFrame {
         table.setFillsViewportHeight(true);
         table.getTableHeader().setReorderingAllowed(false);
 
-        // The sorter does the filtering; column sorting is switched off for now.
-        sorter = new TableRowSorter<>(model);
-        for (int i = 0; i < model.getColumnCount(); i++) sorter.setSortable(i, false);
+        // Click a column header to sort by it (click again to reverse).
+        sorter = createSorter(model);
         table.setRowSorter(sorter);
 
         // Double-clicking a row opens it for editing.
@@ -63,10 +75,6 @@ public class ContactManagerFrame extends JFrame {
         // Edit and Delete only make sense with a row selected.
         table.getSelectionModel().addListSelectionListener(e -> updateButtons());
 
-        JButton addButton = new JButton("Add...");
-        addButton.addActionListener(e -> addContact());
-        editButton.addActionListener(e -> editSelected());
-        deleteButton.addActionListener(e -> deleteSelected());
         updateButtons();
 
         searchField.setToolTipText("Filter by name, phone or email");
@@ -78,9 +86,9 @@ public class ContactManagerFrame extends JFrame {
 
         JToolBar toolbar = new JToolBar();
         toolbar.setFloatable(false);
-        toolbar.add(addButton);
-        toolbar.add(editButton);
-        toolbar.add(deleteButton);
+        toolbar.add(new JButton(addAction));
+        toolbar.add(new JButton(editAction));
+        toolbar.add(new JButton(deleteAction));
         toolbar.addSeparator();
         toolbar.add(new JLabel("Search: "));
         toolbar.add(searchField);
@@ -88,12 +96,59 @@ public class ContactManagerFrame extends JFrame {
         status.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
         updateStatus();
 
+        setJMenuBar(buildMenuBar());
         add(toolbar, BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
         add(status, BorderLayout.SOUTH);
 
         setSize(640, 400);
         setLocationRelativeTo(null);
+    }
+
+    /**
+     * A sorter that orders every column ignoring case and starts sorted by
+     * name. It also does the search filtering (see applyFilter).
+     */
+    static TableRowSorter<ContactTableModel> createSorter(ContactTableModel model) {
+        TableRowSorter<ContactTableModel> s = new TableRowSorter<>(model);
+        for (int i = 0; i < model.getColumnCount(); i++) {
+            s.setComparator(i, String.CASE_INSENSITIVE_ORDER);
+        }
+        s.setSortKeys(List.of(new RowSorter.SortKey(0, SortOrder.ASCENDING)));
+        return s;
+    }
+
+    /** File (Find, Quit) and Contact (Add, Edit, Delete) menus with shortcuts. */
+    private JMenuBar buildMenuBar() {
+        JMenu fileMenu = new JMenu("File");
+        fileMenu.add(action("Find", KeyEvent.VK_F, () -> searchField.requestFocusInWindow()));
+        fileMenu.addSeparator();
+        fileMenu.add(action("Quit", KeyEvent.VK_Q, this::dispose));
+
+        JMenu contactMenu = new JMenu("Contact");
+        contactMenu.add(addAction);
+        contactMenu.add(editAction);
+        contactMenu.add(deleteAction);
+
+        JMenuBar bar = new JMenuBar();
+        bar.add(fileMenu);
+        bar.add(contactMenu);
+        return bar;
+    }
+
+    /** An action with a menu shortcut (Cmd on macOS, Ctrl elsewhere). */
+    private static Action action(String name, int key, Runnable run) {
+        Action a = new AbstractAction(name) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                run.run();
+            }
+        };
+        if (!GraphicsEnvironment.isHeadless()) {
+            int mask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+            a.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(key, mask));
+        }
+        return a;
     }
 
     private void addContact() {
@@ -148,8 +203,8 @@ public class ContactManagerFrame extends JFrame {
 
     private void updateButtons() {
         boolean selected = table.getSelectedRow() >= 0;
-        editButton.setEnabled(selected);
-        deleteButton.setEnabled(selected);
+        editAction.setEnabled(selected);
+        deleteAction.setEnabled(selected);
     }
 
     /** Writes the table back to the CSV file, reporting any failure. */
